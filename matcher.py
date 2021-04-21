@@ -1,15 +1,19 @@
 from csv_processor import CSVImporter
+from greedy_optimizer import GreedyOptimiser
 from transcript_processor import TranscriptProcessor
 import random
 from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
+import numpy as np
 
 class Matcher:
     def __init__(self, students, transcripts):
         self.students = students
         self.transcripts = transcripts
         self.indexes = list(range(len(students)))
+        self.scores = np.zeros((len(students), len(transcripts)))
         self.discard = {"bachelor", "philosophy", "engineering"}
+        self.max_score = -1
 
     def print(self):
         print(f"Count Students: {len(self.students)}")
@@ -24,20 +28,31 @@ class Matcher:
             print(transcript.name)
 
     def match(self):
-        if(len(self.transcripts) > len(self.students)):
-            self.discard_names()
+        # if(len(self.transcripts) > len(self.students)):
+        #     self.discard_names()
 
+        self.prepare_scores()
+        #self.normalize()
+
+        gd = GreedyOptimiser(self.scores)
+        self.indexes = gd.optimize()
+
+
+    def prepare_scores(self):
         for student_index, student in enumerate(self.students):
-            max_score = -1
-            max_score_index = -1
             for transcript_index, transcript in enumerate(self.transcripts):
-                if not self.taken(student_index, transcript_index):
-                    score = fuzz.ratio(student.name, transcript.name)
-                    if score > max_score:
-                        max_score = score
-                        max_score_index = transcript_index
+                score = fuzz.ratio(student.name, transcript.name)
+                self.scores[student_index, transcript_index] = score
 
-            self.indexes[student_index] = max_score_index
+    def normalize(self):
+        for index, value in enumerate(self.scores):
+            max_score_index = np.argmax(value)
+
+            if value[max_score_index] > 80:
+                value[max_score_index] = 100
+
+            if value[max_score_index] >= 30:
+                value[value<30] = 0
 
     def taken(self, before_student_index, transcript_index):
         if before_student_index == 0:
