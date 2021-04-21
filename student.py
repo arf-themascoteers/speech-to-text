@@ -1,6 +1,6 @@
 class Student:
     def __init__(self, row):
-        self.name = row[0]
+        self.name = row[0].lower()
         self.code = row[1]
         self.reference = row[2]
         self.award = row[3]

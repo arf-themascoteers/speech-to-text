@@ -16,6 +16,3 @@ class CSVImporter:
         return students
 
 
-ci = CSVImporter()
-students = ci.process()
-print(students)
